@@ -1,0 +1,26 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Stdlib only, so the floor is what matters: the script targets 3.6+
+        # and must keep working on whatever the target Splunk host happens to
+        # ship.
+        python-version: ["3.8", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: offline tests
+        run: python3 test_splunk_sample_export.py
+      - name: imports cleanly with no third-party packages
+        run: python3 -c "import importlib.util as u; s=u.spec_from_file_location('sse','splunk_sample_export.py'); m=u.module_from_spec(s); s.loader.exec_module(m); print('ok')"
+      - name: help text renders
+        run: python3 splunk_sample_export.py --help > /dev/null
